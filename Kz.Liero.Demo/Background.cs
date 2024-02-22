@@ -16,6 +16,8 @@ namespace Kz.Liero
             new Color(85, 40, 0, 255)
         ];
 
+        public static Color DefaultColor => new Color(85, 40, 0, 255);
+
         private RenderTexture2D _backgroundTexture;
 
         private readonly int _worldWidth;

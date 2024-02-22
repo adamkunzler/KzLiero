@@ -21,7 +21,7 @@ internal class Program
         //
         // Setup Game
         //
-        var game = new Game(settings, 400, 400);
+        var game = new Game(settings, 600, 600);
 
         //
         // MAIN RENDER LOOP

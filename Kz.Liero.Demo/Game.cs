@@ -58,6 +58,9 @@ namespace Kz.Liero
         private World _world;
         private ViewPort _view1;
         private ViewPort _view2;
+        private Minimap _minimap;
+
+        private const float VIEWPORT_HEIGHT_PERCENT = 0.75f;
 
         public RenderTexture2D Texture => _target;
 
@@ -67,7 +70,7 @@ namespace Kz.Liero
             _world = new World(settings, worldWidth, worldHeight);
 
             var vpWidth = settings.ScreenWidth / 2;
-            var vpHeight = (int)(settings.ScreenHeight * 0.75);
+            var vpHeight = (int)(settings.ScreenHeight * VIEWPORT_HEIGHT_PERCENT);
 
             _view1 = new ViewPort(
                 _world,
@@ -81,7 +84,9 @@ namespace Kz.Liero
                 new Vector2(vpWidth - 1, vpHeight) // width/height
             );
 
-            // TODO minimap
+            var mmHeight = (settings.ScreenHeight - vpHeight) - 10;
+            var mmWidth = mmHeight * (worldWidth / worldHeight);
+            _minimap = new Minimap(mmWidth, mmHeight);
 
             Init();
         }
@@ -105,6 +110,7 @@ namespace Kz.Liero
         {
             _view1.Render(_world, _world.Player1Position);
             _view2.Render(_world, _world.Player2Position);
+            _minimap.Render(_world);
 
             // Final Render to Target Texture
             Raylib.BeginTextureMode(_target);
@@ -112,6 +118,14 @@ namespace Kz.Liero
 
             RenderViewPortToTexture(_view1);
             RenderViewPortToTexture(_view2);
+
+            // center minimap beneath the viewports
+            var mmX = (_settings.ScreenWidth / 2.0f) - (_minimap.Width / 2.0f);
+            var mmY = _settings.ScreenHeight * VIEWPORT_HEIGHT_PERCENT + 5;
+            RaylibHelper.RenderTexture(_minimap.Target,
+                0, 0, _minimap.Width, _minimap.Height,
+                (int)mmX, (int)mmY, _minimap.Width, _minimap.Height,
+                Color.White);
 
             Raylib.EndTextureMode();
         }

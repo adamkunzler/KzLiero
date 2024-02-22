@@ -23,12 +23,16 @@ namespace Kz.Liero
         private Player _player1;
         private Player _player2;
 
-        private static float _playerSpeed = 0.75f;
+        private static float _playerSpeed = 1.75f;
 
         public int WorldWidth => _worldWidth;
         public int WorldHeight => _worldHeight;
         public Vector2 Player1Position => _player1.Position;
         public Vector2 Player2Position => _player2.Position;
+        public Color Player1Color => _player1.Color;
+        public Color Player2Color => _player2.Color;
+
+
 
         public World(WindowSettings settings, int worldWidth, int worldHeight)
         {
@@ -49,7 +53,7 @@ namespace Kz.Liero
             _player1 = new Player();
             _player1.Position = new Vector2(_random.Next(10, _worldWidth - 10), _random.Next(10, _worldWidth - 10));
             _player1.Color = Color.DarkGreen;
-            _arena.RemoveDirt((int)_player1.Position.X, (int)_player1.Position.Y, Player.Size * 3);
+            _arena.RemoveDirt((int)_player1.Position.X, (int)_player1.Position.Y, Player.Size * 30);
 
             _player2 = new Player();
             _player2.Position = new Vector2(_random.Next(10, _worldWidth - 10), _random.Next(10, _worldWidth - 10));
@@ -166,6 +170,12 @@ namespace Kz.Liero
         public void Cleanup()
         {
             _arena.Cleanup();
+        }
+
+        public Dirt? DirtAt(int x, int y)
+        {
+            var dirt =_arena.DirtAt(x, y);
+            return dirt;
         }
 
         #endregion Public Methods

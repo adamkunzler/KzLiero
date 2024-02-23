@@ -14,7 +14,10 @@ namespace Kz.Liero
         private Random _random = new Random();
 
         private readonly int _worldWidth;
+        public int WorldWidth => _worldWidth;
+
         private readonly int _worldHeight;
+        public int WorldHeight => _worldHeight;
 
         private RenderTexture2D? _target = null;
         public RenderTexture2D Target => _target!.Value;
@@ -24,9 +27,7 @@ namespace Kz.Liero
         private Player _player2;
 
         private static float _playerSpeed = 1.75f;
-
-        public int WorldWidth => _worldWidth;
-        public int WorldHeight => _worldHeight;
+                        
         public Vector2 Player1Position => _player1.Position;
         public Vector2 Player2Position => _player2.Position;
         public Color Player1Color => _player1.Color;
@@ -53,7 +54,7 @@ namespace Kz.Liero
             _player1 = new Player();
             _player1.Position = new Vector2(_random.Next(10, _worldWidth - 10), _random.Next(10, _worldWidth - 10));
             _player1.Color = Color.DarkGreen;
-            _arena.RemoveDirt((int)_player1.Position.X, (int)_player1.Position.Y, Player.Size * 30);
+            _arena.RemoveDirt((int)_player1.Position.X, (int)_player1.Position.Y, Player.Size * 3);
 
             _player2 = new Player();
             _player2.Position = new Vector2(_random.Next(10, _worldWidth - 10), _random.Next(10, _worldWidth - 10));
@@ -69,7 +70,7 @@ namespace Kz.Liero
         }
 
         /// <summary>
-        /// Render a chunk of the world
+        /// Render a chunk of the world defined by an AABB
         /// </summary>
         /// <param name="position">top left in the world</param>
         /// <param name="size">width/height</param>
@@ -87,19 +88,9 @@ namespace Kz.Liero
 
             // render entities (weapons, particles, etc)
             // TODO
-
-            //
-            // render players (if in bounds)
-            //
-            var maxBounds = new Vector2(position.X + size.X, position.Y + size.Y);
-            if (InBounds(position, maxBounds, _player1.Position))
-            {
-                _player1.Render(position);
-            }
-            if (InBounds(position, maxBounds, _player2.Position))
-            {
-                _player2.Render(position);
-            }
+            
+            // render players (if in bounds)            
+            RenderPlayers(position, size);
 
             Raylib.EndTextureMode();
         }
@@ -179,6 +170,19 @@ namespace Kz.Liero
         }
 
         #endregion Public Methods
+
+        private void RenderPlayers(Vector2 position, Vector2 size)
+        {
+            var maxBounds = new Vector2(position.X + size.X, position.Y + size.Y);
+            if (InBounds(position, maxBounds, _player1.Position))
+            {
+                _player1.Render(position);
+            }
+            if (InBounds(position, maxBounds, _player2.Position))
+            {
+                _player2.Render(position);
+            }
+        }
 
         private bool InBounds(Vector2 minBounds, Vector2 maxBounds, Vector2 position)
         {

@@ -49,6 +49,9 @@ rgb(219, 223, 138)
 
 namespace Kz.Liero
 {
+    /// <summary>
+    /// Acts as a container for the World, ViewPorts, Minimap and managing game state
+    /// </summary>
     public class Game : IGame
     {
         #region ctor
@@ -66,7 +69,7 @@ namespace Kz.Liero
 
         public Game(WindowSettings settings, int worldWidth, int worldHeight)
         {
-            _settings = settings;            
+            _settings = settings;
             _world = new World(settings, worldWidth, worldHeight);
 
             var vpWidth = settings.ScreenWidth / 2;
@@ -119,13 +122,7 @@ namespace Kz.Liero
             RenderViewPortToTexture(_view1);
             RenderViewPortToTexture(_view2);
 
-            // center minimap beneath the viewports
-            var mmX = (_settings.ScreenWidth / 2.0f) - (_minimap.Width / 2.0f);
-            var mmY = _settings.ScreenHeight * VIEWPORT_HEIGHT_PERCENT + 5;
-            RaylibHelper.RenderTexture(_minimap.Target,
-                0, 0, _minimap.Width, _minimap.Height,
-                (int)mmX, (int)mmY, _minimap.Width, _minimap.Height,
-                Color.White);
+            RenderMinimap();
 
             Raylib.EndTextureMode();
         }
@@ -146,7 +143,18 @@ namespace Kz.Liero
 
         #region Private Methods
 
-        public void RenderViewPortToTexture(ViewPort view)
+        private void RenderMinimap()
+        {
+            // center minimap beneath the viewports
+            var mmX = (_settings.ScreenWidth / 2.0f) - (_minimap.Width / 2.0f);
+            var mmY = _settings.ScreenHeight * VIEWPORT_HEIGHT_PERCENT + 5;
+            RaylibHelper.RenderTexture(_minimap.Target,
+                0, 0, _minimap.Width, _minimap.Height,
+                (int)mmX, (int)mmY, _minimap.Width, _minimap.Height,
+                Color.White);
+        }
+
+        private void RenderViewPortToTexture(ViewPort view)
         {
             var src = new Rectangle(0, 0, view.Target.Texture.Width, -view.Target.Texture.Height);
             var dest = new Rectangle(view.ScreenPosition.X, view.ScreenPosition.Y, view.Size.X, view.Size.Y);
@@ -160,6 +168,6 @@ namespace Kz.Liero
                 Color.White);
         }
 
-        #endregion
+        #endregion Private Methods
     }
 }

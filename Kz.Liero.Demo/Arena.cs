@@ -30,6 +30,22 @@ namespace Kz.Liero
 
         #endregion Colors
 
+        #region Sprites
+
+        private const int NUM_ROCK_IMAGES = 3;
+        private const int MAX_ROCKS = 25;
+        private Image[] _rocks = new Image[NUM_ROCK_IMAGES];
+
+        private const int NUM_DIRTBALL_IMAGES = 3;
+        private const int MAX_DIRTBALLS = 50;
+        private Image[] _dirtballs = new Image[NUM_DIRTBALL_IMAGES];
+
+        private const int NUM_BONE_IMAGES = 3;
+        private const int MAX_BONES = 25;
+        private Image[] _bones = new Image[NUM_BONE_IMAGES];
+
+        #endregion Sprites
+
         #region ctor
 
         private readonly Random _random = new Random();
@@ -52,6 +68,9 @@ namespace Kz.Liero
 
         public void Init()
         {
+            InitRocks();
+            InitDirtBalls();
+            InitBones();
             InitDirt();
         }
 
@@ -92,6 +111,10 @@ namespace Kz.Liero
 
         public void Cleanup()
         {
+            for(var i = 0; i < NUM_ROCK_IMAGES; i++)
+            {
+                Raylib.UnloadImage(_rocks[i]);
+            }
         }
 
         public Dirt? DirtAt(int x, int y)
@@ -116,7 +139,9 @@ namespace Kz.Liero
                     var val = ((x - px) * (x - px)) + ((y - py) * (y - py));
                     if (val < radiusSquared)
                     {
-                        _dirt[x + y * _worldWidth].IsActive = false;
+                        var index = x + y * _worldWidth;
+                        if (_dirt[index].Type != DirtType.Dirt) continue; // only remove DirtType.Dirt
+                        _dirt[index].IsActive = false;
                     }
                 }
             }
@@ -137,16 +162,93 @@ namespace Kz.Liero
 
         private void InitDirt()
         {
+            //
+            // create the dirt
+            //
             var noise = Utils.GenerateNoiseMap(_worldWidth, _worldHeight);
-
+            
             _dirt = new Dirt[_worldWidth * _worldHeight];
+
             for (var i = 0; i < _worldWidth * _worldHeight; i++)
             {
                 _dirt[i] = new Dirt
                 {
                     IsActive = true,
                     Color = _dirtColors[noise[i]],
+                    Type = DirtType.Dirt,
                 };
+            }
+
+            //
+            // create the rocks, dirt balls, and bones
+            //
+            InitDirtObjects(MAX_ROCKS, _rocks, DirtType.Rock);            
+            InitDirtObjects(MAX_DIRTBALLS, _dirtballs, DirtType.Dirt);
+            InitDirtObjects(MAX_BONES, _bones, DirtType.Dirt);
+        }
+
+        private void InitDirtObjects(int maxObjects, Image[] images, DirtType dirtType)
+        {
+            var numObjects = _random.Next(maxObjects);
+            for (var i = 0; i < numObjects; i++)
+            {
+                var objIndex = _random.Next(images.Length);
+                var image = images[objIndex];
+
+                var originX = _random.Next(_worldWidth);
+                var originY = _random.Next(_worldHeight);
+
+                var halfImageWidth = image.Width / 2;
+                var halfImageHeight = image.Height / 2;
+
+                for (var y = 0; y < image.Height; y++)
+                {
+                    for (var x = 0; x < image.Width; x++)
+                    {
+                        var color = Raylib.GetImageColor(image, x, y);
+                        if (color.R == 0 && color.G == 0 && color.B == 0 && color.A == 0) continue;
+
+                        var wx = x + originX - halfImageWidth;
+                        var wy = y + originY - halfImageHeight;
+
+                        if (!IsInBounds(wx, wy)) continue;
+
+                        var index = wx + wy * _worldWidth;
+                        _dirt[index] = new Dirt
+                        {
+                            IsActive = true,
+                            Color = color,
+                            Type = dirtType,
+                        };
+                    }
+                }
+            }
+        }
+
+        private void InitRocks()
+        {                        
+            for(var i = 1; i <= NUM_ROCK_IMAGES; i++)
+            {
+                var filename = $"Resources\\Rock00{i}.png";
+                _rocks[i - 1] = Raylib.LoadImage(filename);
+            }
+        }
+
+        private void InitDirtBalls()
+        {
+            for (var i = 1; i <= NUM_DIRTBALL_IMAGES; i++)
+            {
+                var filename = $"Resources\\DirtBall00{i}.png";
+                _dirtballs[i - 1] = Raylib.LoadImage(filename);
+            }
+        }
+
+        private void InitBones()
+        {
+            for (var i = 1; i <= NUM_BONE_IMAGES; i++)
+            {
+                var filename = $"Resources\\Bones00{i}.png";
+                _bones[i - 1] = Raylib.LoadImage(filename);
             }
         }
 

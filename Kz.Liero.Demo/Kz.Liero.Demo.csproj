@@ -39,6 +39,9 @@
     <None Update="Resources\Rock003.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Resources\Worm.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Shaders\Greyscale.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

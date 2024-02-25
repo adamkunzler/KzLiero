@@ -25,6 +25,7 @@ public class Worm
     public float X { get; set; }
     public float Y { get; set; }
 
+    // dimension of the sprite
     public float Size { get; set; }
 
     public float AimAngle { get; set; }
@@ -42,6 +43,8 @@ public class Worm
 
     private bool _isJumping = false;
 
+    private List<(int X, int Y)> _edgePixels;
+
     public Worm()
     {
         State = WormState.Still;
@@ -55,10 +58,11 @@ public class Worm
             DefaultFrameIndex = 1,
             Width = 20,
             Height = 20,
-            Tint = Color.Green,
-            //Scale = _spriteScale,
+            Tint = Color.Green,            
         };
         _sprite = new Sprite(config);
+
+        _edgePixels = _sprite.GetSpriteEdges(1, 2);
     }
 
     public void Update()
@@ -72,12 +76,7 @@ public class Worm
 
         _velocityY += _gravity;
         if (_velocityY > 100) _velocityY = 100; // ?? Better way to do this...keep it from continuing to climb
-
-        if (_isJumping)
-        {
-            Console.WriteLine(_velocityY);
-        }
-
+        
 
         //
         // Calculate FrameIndex
@@ -128,11 +127,23 @@ public class Worm
         Raylib.DrawRectangleLines((int)xx, (int)yy, 10, 10, Color.Red);
 
         // bounding box
-        Raylib.DrawCircle((int)(X - Size / 2.0f), (int)(Y - Size / 2.0f), 2.0f, Color.Purple);
-        Raylib.DrawRectangleLines(
-            (int)(X - Size), (int)(Y - Size), 
-            (int)(Size), (int)(Size), 
-            Color.Purple);
+        //Raylib.DrawCircle((int)(X - Size / 2.0f), (int)(Y - Size / 2.0f), 2.0f, Color.Purple);
+        //Raylib.DrawRectangleLines(
+        //    (int)(X - Size), (int)(Y - Size), 
+        //    (int)(Size), (int)(Size), 
+        //    Color.Purple);
+
+        // edge pixels
+        for(var i = 0; i < _edgePixels.Count; i++)
+        {            
+            // 10 is half the width of the actual sprite image
+            // 20 is the width of the actual sprite image
+            //      center at origin           scale            offset
+            var x = (_edgePixels[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
+            var y = (_edgePixels[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
+            //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
+            Raylib.DrawPixel((int)(x+X), (int)(y+Y), Color.Purple);
+        }
     }
 
     public void MoveRight()
@@ -199,6 +210,11 @@ public class Worm
 
         _velocityY = _jumpVelocity;
         _isJumping = true;        
+    }
+
+    public void Cleanup()
+    {
+        _sprite.Cleanup();
     }
 }
 
@@ -271,6 +287,7 @@ internal class Program
             Raylib.EndDrawing();
         }
 
+        worm.Cleanup();
         Raylib.CloseWindow();
     }
 }

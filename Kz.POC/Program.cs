@@ -43,7 +43,8 @@ public class Worm
 
     private bool _isJumping = false;
 
-    private List<(int X, int Y)> _edgePixels;
+    private List<(int X, int Y)> _edgePixelsRight;
+    private List<(int X, int Y)> _edgePixelsLeft;
 
     public Worm()
     {
@@ -62,7 +63,14 @@ public class Worm
         };
         _sprite = new Sprite(config);
 
-        _edgePixels = _sprite.GetSpriteEdges(1, 2);
+        _edgePixelsRight = _sprite.GetSpriteEdges(1, 2);
+        _edgePixelsLeft = new List<(int X, int Y)>();
+        for (var i = 0; i < _edgePixelsRight.Count; i++)
+        {            
+            var x = 20 -_edgePixelsRight[i].X - 1;
+            var y = _edgePixelsRight[i].Y;
+            _edgePixelsLeft.Add((x, y)); 
+        }        
     }
 
     public void Update()
@@ -134,15 +142,30 @@ public class Worm
         //    Color.Purple);
 
         // edge pixels
-        for(var i = 0; i < _edgePixels.Count; i++)
-        {            
-            // 10 is half the width of the actual sprite image
-            // 20 is the width of the actual sprite image
-            //      center at origin           scale            offset
-            var x = (_edgePixels[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
-            var y = (_edgePixels[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
-            //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
-            Raylib.DrawPixel((int)(x+X), (int)(y+Y), Color.Purple);
+        if (Direction == WormDir.Right)
+        {
+            for (var i = 0; i < _edgePixelsRight.Count; i++)
+            {
+                // 10 is half the width of the actual sprite image
+                // 20 is the width of the actual sprite image
+                //      center at origin           scale            offset
+                var x = (_edgePixelsRight[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
+                var y = (_edgePixelsRight[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
+                //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
+                Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+            }
+        } else
+        {
+            for (var i = 0; i < _edgePixelsLeft.Count; i++)
+            {
+                // 10 is half the width of the actual sprite image
+                // 20 is the width of the actual sprite image
+                //      center at origin           scale            offset
+                var x = (_edgePixelsLeft[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
+                var y = (_edgePixelsLeft[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
+                //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
+                Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+            }
         }
     }
 

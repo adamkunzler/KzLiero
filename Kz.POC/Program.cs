@@ -2,7 +2,6 @@
 // https://github.com/ChrisDill/Raylib-cs
 // dotnet add package Raylib-cs
 
-using Kz.POC;
 using Kz.Trigonometry;
 using Raylib_cs;
 using System.Numerics;
@@ -17,7 +16,8 @@ public enum WormDir
 public enum WormState
 {
     Still,
-    Moving
+    Moving,
+    Jumping,
 }
 
 public class Worm
@@ -47,6 +47,10 @@ public class Worm
     private int _shaderShadeLocation;
     private float[] _shaderShade = [];
 
+    private float _velocityY = 0.0f;
+    private float _gravity = 0.25f;
+    private float _jumpVelocity = -5.5f;
+
     public Worm()
     {
         State = WormState.Still;
@@ -61,11 +65,24 @@ public class Worm
 
     public void Update()
     {
-        //
-        // Calculate FrameIndex
-        //
-        if (State == WormState.Still) 
-        { 
+        //if (State == WormState.Jumping)
+        //{
+        Y += _velocityY;
+        if (Y > 512)
+        {
+            Y = 512;
+            //State = WormState.Still;
+        }
+
+        _velocityY += _gravity;
+            //if (_velocityY > 0.0f) _velocityY = 0.0f;
+            //}
+
+            //
+            // Calculate FrameIndex
+            //
+        if (State == WormState.Still)
+        {
             _frameIndex = 1;
             _frameTime = 0.0f;
             _frameDir = 1;
@@ -77,7 +94,7 @@ public class Worm
             {
                 _frameTime = 0.0f;
                 _frameIndex += _frameDir;
-                if(_frameIndex >= _maxFrames)
+                if (_frameIndex >= _maxFrames)
                 {
                     _frameIndex = _maxFrames - 2;
                     _frameDir = -_frameDir;
@@ -139,14 +156,13 @@ public class Worm
         //
         // render sprite
         //
-        var color = Color.Red;
         Raylib.SetShaderValue(_shader, _shaderShadeLocation, _shaderShade, ShaderUniformDataType.Vec4);
 
-        Raylib.BeginShaderMode(_shader);        
+        Raylib.BeginShaderMode(_shader);
         var spriteX = _frameIndex * 20;
         var spriteY = _spriteIndex * 20;
         var source = new Rectangle(spriteX, spriteY, Direction == WormDir.Right ? 20 : -20, 20);
-        var dest = new Rectangle(X, Y, Size*2, Size*2);
+        var dest = new Rectangle(X, Y, Size * 2, Size * 2);
         var origin = new Vector2(Size, Size);
         Raylib.DrawTexturePro(_sprites, source, dest, origin, 0.0f, Color.White);
         Raylib.EndShaderMode();
@@ -155,7 +171,7 @@ public class Worm
     public void MoveRight()
     {
         State = WormState.Moving;
-        
+
         X += _speed;
 
         if (Direction == WormDir.Left)
@@ -209,18 +225,26 @@ public class Worm
             if (AimAngle < Consts.THREE_PI_OVER_FOUR) { AimAngle = Consts.THREE_PI_OVER_FOUR; }
         }
     }
+
+    public void Jump()
+    {
+        //if (State != WormState.Jumping)
+        //{
+        //State = WormState.Jumping;
+        _velocityY = _jumpVelocity;
+        //}
+    }
 }
 
 internal class Program
 {
     public static void Main()
-    {        
+    {
         //
         // Initialization
         //
         Raylib.InitWindow(1024, 1024, ".: POC :.");
         Raylib.SetTargetFPS(60);
-
 
         var worm = new Worm();
         worm.X = 512;
@@ -245,9 +269,10 @@ internal class Program
                 worm.MoveRight();
             }
 
-            if(Raylib.IsKeyUp(KeyboardKey.Left) && !Raylib.IsKeyDown(KeyboardKey.Right)) { worm.State = WormState.Still; }
+            if (Raylib.IsKeyUp(KeyboardKey.Left) && !Raylib.IsKeyDown(KeyboardKey.Right)) { worm.State = WormState.Still; }
             if (Raylib.IsKeyUp(KeyboardKey.Right) && !Raylib.IsKeyDown(KeyboardKey.Left)) { worm.State = WormState.Still; }
 
+            if (Raylib.IsKeyPressed(KeyboardKey.Space)) worm.Jump();
 
             if (Raylib.IsKeyDown(KeyboardKey.Up))
             {
@@ -273,7 +298,7 @@ internal class Program
             Raylib.ClearBackground(Color.Black);
 
             // draw some ground
-            Raylib.DrawRectangle(0, (int)(worm.Y + worm.Size), 1024, (int)(512 - worm.Size), Color.DarkBrown);
+            Raylib.DrawRectangle(0, 537, 1024, (int)(512 - worm.Size), Color.DarkBrown);
 
             worm.Render();
 

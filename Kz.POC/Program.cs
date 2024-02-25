@@ -4,8 +4,8 @@
 
 using Kz.Engine.General;
 using Kz.Engine.Trigonometry;
+using Kz.POC;
 using Raylib_cs;
-using System.Numerics;
 using Color = Raylib_cs.Color;
 
 public enum WormDir
@@ -17,8 +17,7 @@ public enum WormDir
 public enum WormState
 {
     Still,
-    Moving,
-    Jumping,
+    Moving,    
 }
 
 public class Worm
@@ -35,82 +34,67 @@ public class Worm
 
     private float _speed = 1.5f;
 
-    private int _spriteIndex;
-    private int _frameIndex;
-    private float _frameSpeed = 0.15f;
-    private float _frameTime = 0.0f;
-    private int _frameDir = 1;
-    private int _maxFrames = 3;
-
-    private Texture2D _sprites;
-    private Shader _shader;
-
-    private int _shaderShadeLocation;
-    private float[] _shaderShade = [];
+    private Sprite _sprite;
 
     private float _velocityY = 0.0f;
-    private float _gravity = 0.25f;
-    private float _jumpVelocity = -5.5f;
+    private float _gravity = 0.40f;
+    private float _jumpVelocity = -10.5f;
+
+    private bool _isJumping = false;
 
     public Worm()
     {
         State = WormState.Still;
-
-        _sprites = Raylib.LoadTexture("Resources\\Worm.png");
-        _shader = Raylib.LoadShader("", "Resources\\Worm.frag");
-
-        _shaderShadeLocation = Raylib.GetShaderLocation(_shader, "shade");
-        var color = Color.Blue;
-        _shaderShade = [color.R / 255.0f, color.G / 255.0f, color.B / 255.0f, color.A / 255.0f];
+        var config = new SpriteConfig
+        {
+            Filename = "Resources\\Worm.png",
+            FragShaderFilename = "Resources\\Worm.frag",
+            MaxFrames = 3,
+            MaxAnimations = 7,
+            FrameSpeed = 0.15f,
+            DefaultFrameIndex = 1,
+            Width = 20,
+            Height = 20,
+            Tint = Color.Green,
+            //Scale = _spriteScale,
+        };
+        _sprite = new Sprite(config);
     }
 
     public void Update()
-    {
-        //if (State == WormState.Jumping)
-        //{
+    {                
         Y += _velocityY;
         if (Y > 512)
         {
             Y = 512;
-            //State = WormState.Still;
+            _isJumping = false;            
         }
 
         _velocityY += _gravity;
-            //if (_velocityY > 0.0f) _velocityY = 0.0f;
-            //}
+        if (_velocityY > 100) _velocityY = 100; // ?? Better way to do this...keep it from continuing to climb
 
-            //
-            // Calculate FrameIndex
-            //
+        if (_isJumping)
+        {
+            Console.WriteLine(_velocityY);
+        }
+
+
+        //
+        // Calculate FrameIndex
+        //
         if (State == WormState.Still)
         {
-            _frameIndex = 1;
-            _frameTime = 0.0f;
-            _frameDir = 1;
+            _sprite.SetDefaultState();
         }
         else
         {
-            _frameTime += Raylib.GetFrameTime();
-            if (_frameTime > _frameSpeed)
-            {
-                _frameTime = 0.0f;
-                _frameIndex += _frameDir;
-                if (_frameIndex >= _maxFrames)
-                {
-                    _frameIndex = _maxFrames - 2;
-                    _frameDir = -_frameDir;
-                }
-                else if (_frameIndex < 0)
-                {
-                    _frameIndex = 1;
-                    _frameDir = -_frameDir;
-                }
-            }
+            _sprite.Update();
         }
 
         //
         // Calculate SpriteIndex
         //
+        var spriteIndex = 0;
         if (Direction == WormDir.Right)
         {
             // two ranges: 3pi/2 to 2pi and 0 to pi/4
@@ -118,51 +102,37 @@ public class Worm
             // 0 to pi/4 is indexes 0 - 2
             if (AimAngle >= TrigConsts.THREE_PI_OVER_TWO && AimAngle < TrigConsts.TWO_PI)
             {
-                _spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_TWO, TrigConsts.TWO_PI, 6, 2);
+                spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_TWO, TrigConsts.TWO_PI, 6, 2);
             }
             else if (AimAngle >= 0 && AimAngle <= TrigConsts.PI_OVER_FOUR)
             {
-                _spriteIndex = (int)Utils.RangeMap(AimAngle, 0, TrigConsts.PI_OVER_FOUR, 2, 0);
+                spriteIndex = (int)Utils.RangeMap(AimAngle, 0, TrigConsts.PI_OVER_FOUR, 2, 0);
             }
         }
         else if (Direction == WormDir.Left)
         {
-            _spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_FOUR, TrigConsts.THREE_PI_OVER_TWO, 0, 6);
+            spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_FOUR, TrigConsts.THREE_PI_OVER_TWO, 0, 6);
         }
 
-        _spriteIndex = Math.Clamp(_spriteIndex, 0, 6);
+        spriteIndex = Math.Clamp(spriteIndex, 0, 6);
+        _sprite.SetSpriteAnimationIndex(spriteIndex);
     }
-
-    
 
     public void Render()
     {
-        //Raylib.DrawCircle((int)X, (int)Y, Size, Color.DarkGreen);
+        _sprite.Render((int)X, (int)Y, (int)Size, (int)Size, Direction == WormDir.Left, false);
 
+        // crosshairs
         var xx = X + MathF.Cos(AimAngle) * Size * 5.0f;
         var yy = Y + MathF.Sin(AimAngle) * Size * 5.0f;
-
         Raylib.DrawRectangleLines((int)xx, (int)yy, 10, 10, Color.Red);
 
-        Raylib.DrawText($"SpriteIndex: {_spriteIndex}", 10, 10, 20, Color.RayWhite);
-        Raylib.DrawText($"FrameIndex: {_frameIndex}", 10, 40, 20, Color.RayWhite);
-        Raylib.DrawText($"State: {State}", 10, 70, 20, Color.RayWhite);
-
-        //Raylib.DrawTexture(_sprites, 500, 10, Color.RayWhite);
-
-        //
-        // render sprite
-        //
-        Raylib.SetShaderValue(_shader, _shaderShadeLocation, _shaderShade, ShaderUniformDataType.Vec4);
-
-        Raylib.BeginShaderMode(_shader);
-        var spriteX = _frameIndex * 20;
-        var spriteY = _spriteIndex * 20;
-        var source = new Rectangle(spriteX, spriteY, Direction == WormDir.Right ? 20 : -20, 20);
-        var dest = new Rectangle(X, Y, Size * 2, Size * 2);
-        var origin = new Vector2(Size, Size);
-        Raylib.DrawTexturePro(_sprites, source, dest, origin, 0.0f, Color.White);
-        Raylib.EndShaderMode();
+        // bounding box
+        Raylib.DrawCircle((int)(X - Size / 2.0f), (int)(Y - Size / 2.0f), 2.0f, Color.Purple);
+        Raylib.DrawRectangleLines(
+            (int)(X - Size), (int)(Y - Size), 
+            (int)(Size), (int)(Size), 
+            Color.Purple);
     }
 
     public void MoveRight()
@@ -225,11 +195,10 @@ public class Worm
 
     public void Jump()
     {
-        //if (State != WormState.Jumping)
-        //{
-        //State = WormState.Jumping;
+        if (_isJumping) return;
+
         _velocityY = _jumpVelocity;
-        //}
+        _isJumping = true;        
     }
 }
 
@@ -246,7 +215,7 @@ internal class Program
         var worm = new Worm();
         worm.X = 512;
         worm.Y = 512;
-        worm.Size = 25;
+        worm.Size = 50;
         worm.Direction = WormDir.Right;
 
         //

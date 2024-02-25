@@ -16,9 +16,6 @@
     <Reference Include="Kz.Engine">
       <HintPath>..\..\KzEngine\bin\Kz.Engine.dll</HintPath>
     </Reference>
-    <Reference Include="Kz.Trigonometry">
-      <HintPath>..\..\KzEngine\bin\Kz.Trigonometry.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
   <ItemGroup>
@@ -26,9 +23,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Resources\Worm.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Worm.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

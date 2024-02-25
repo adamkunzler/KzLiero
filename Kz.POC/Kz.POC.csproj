@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="Kz.Engine">
+      <HintPath>..\..\KzEngine\bin\Kz.Engine.dll</HintPath>
+    </Reference>
     <Reference Include="Kz.Trigonometry">
       <HintPath>..\..\KzEngine\bin\Kz.Trigonometry.dll</HintPath>
     </Reference>

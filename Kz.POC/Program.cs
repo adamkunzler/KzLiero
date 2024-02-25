@@ -2,7 +2,8 @@
 // https://github.com/ChrisDill/Raylib-cs
 // dotnet add package Raylib-cs
 
-using Kz.Trigonometry;
+using Kz.Engine.General;
+using Kz.Engine.Trigonometry;
 using Raylib_cs;
 using System.Numerics;
 using Color = Raylib_cs.Color;
@@ -115,28 +116,24 @@ public class Worm
             // two ranges: 3pi/2 to 2pi and 0 to pi/4
             // 3pi/2 to 2pi is indexes 2-6
             // 0 to pi/4 is indexes 0 - 2
-            if (AimAngle >= Consts.THREE_PI_OVER_TWO && AimAngle < Consts.TWO_PI)
+            if (AimAngle >= TrigConsts.THREE_PI_OVER_TWO && AimAngle < TrigConsts.TWO_PI)
             {
-                _spriteIndex = (int)RangeMap(AimAngle, Consts.THREE_PI_OVER_TWO, Consts.TWO_PI, 6, 2);
+                _spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_TWO, TrigConsts.TWO_PI, 6, 2);
             }
-            else if (AimAngle >= 0 && AimAngle <= Consts.PI_OVER_FOUR)
+            else if (AimAngle >= 0 && AimAngle <= TrigConsts.PI_OVER_FOUR)
             {
-                _spriteIndex = (int)RangeMap(AimAngle, 0, Consts.PI_OVER_FOUR, 2, 0);
+                _spriteIndex = (int)Utils.RangeMap(AimAngle, 0, TrigConsts.PI_OVER_FOUR, 2, 0);
             }
         }
         else if (Direction == WormDir.Left)
         {
-            _spriteIndex = (int)RangeMap(AimAngle, Consts.THREE_PI_OVER_FOUR, Consts.THREE_PI_OVER_TWO, 0, 6);
+            _spriteIndex = (int)Utils.RangeMap(AimAngle, TrigConsts.THREE_PI_OVER_FOUR, TrigConsts.THREE_PI_OVER_TWO, 0, 6);
         }
 
         _spriteIndex = Math.Clamp(_spriteIndex, 0, 6);
     }
 
-    private float RangeMap(float value, float srcMin, float srcMax, float destMin, float destMax)
-    {
-        var NewValue = ((value - srcMin) / (srcMax - srcMin)) * (destMax - destMin) + destMin;
-        return NewValue;
-    }
+    
 
     public void Render()
     {
@@ -151,7 +148,7 @@ public class Worm
         Raylib.DrawText($"FrameIndex: {_frameIndex}", 10, 40, 20, Color.RayWhite);
         Raylib.DrawText($"State: {State}", 10, 70, 20, Color.RayWhite);
 
-        Raylib.DrawTexture(_sprites, 500, 10, Color.RayWhite);
+        //Raylib.DrawTexture(_sprites, 500, 10, Color.RayWhite);
 
         //
         // render sprite
@@ -201,18 +198,18 @@ public class Worm
             AimAngle = TrigUtil.NormalizeAngle(AimAngle);
 
             // constrain angle between 3pi/2 and pi/4
-            var isInRange = (AimAngle >= Consts.THREE_PI_OVER_TWO || AimAngle <= Consts.PI_OVER_FOUR);
+            var isInRange = (AimAngle >= TrigConsts.THREE_PI_OVER_TWO || AimAngle <= TrigConsts.PI_OVER_FOUR);
             if (!isInRange)
             {
                 // clamp to range
-                var diff = Consts.THREE_PI_OVER_TWO - AimAngle;
-                if (AimAngle < Consts.THREE_PI_OVER_TWO && (diff < 0.25f))
+                var diff = TrigConsts.THREE_PI_OVER_TWO - AimAngle;
+                if (AimAngle < TrigConsts.THREE_PI_OVER_TWO && (diff < 0.25f))
                 {
-                    AimAngle = Consts.THREE_PI_OVER_TWO;
+                    AimAngle = TrigConsts.THREE_PI_OVER_TWO;
                 }
-                else if (AimAngle > Consts.PI_OVER_FOUR)
+                else if (AimAngle > TrigConsts.PI_OVER_FOUR)
                 {
-                    AimAngle = Consts.PI_OVER_FOUR;
+                    AimAngle = TrigConsts.PI_OVER_FOUR;
                 }
             }
         }
@@ -221,8 +218,8 @@ public class Worm
             AimAngle -= amount;
 
             // constrain angle between 3pi/2 and 3pi/4
-            if (AimAngle > Consts.THREE_PI_OVER_TWO) { AimAngle = Consts.THREE_PI_OVER_TWO; }
-            if (AimAngle < Consts.THREE_PI_OVER_FOUR) { AimAngle = Consts.THREE_PI_OVER_FOUR; }
+            if (AimAngle > TrigConsts.THREE_PI_OVER_TWO) { AimAngle = TrigConsts.THREE_PI_OVER_TWO; }
+            if (AimAngle < TrigConsts.THREE_PI_OVER_FOUR) { AimAngle = TrigConsts.THREE_PI_OVER_FOUR; }
         }
     }
 

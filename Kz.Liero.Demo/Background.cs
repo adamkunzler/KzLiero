@@ -33,14 +33,13 @@ namespace Kz.Liero
 
         /// <summary>
         /// Render a chunk of the arena
-        /// </summary>
-        /// <param name="position">top left in the world</param>
-        /// <param name="size">width/height</param>
-        public void Render(Vector2 position, Vector2 size)
+        /// </summary>        
+        public void Render(Rectangle viewPortDimension)
         {
             RaylibHelper.RenderTexture(_backgroundTexture,
-                            (int)position.X, (int)position.Y, (int)size.X, -(int)size.Y,
-                            0, 0, (int)size.X, (int)size.Y,
+                            (int)viewPortDimension.X, (int)viewPortDimension.Y, 
+                            (int)viewPortDimension.Width, -(int)viewPortDimension.Height,
+                            0, 0, (int)viewPortDimension.Width, (int)viewPortDimension.Height,
                             Color.White);
         }
 

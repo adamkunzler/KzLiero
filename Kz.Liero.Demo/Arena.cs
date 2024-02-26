@@ -55,6 +55,8 @@ namespace Kz.Liero
         private readonly int _worldWidth;
         private readonly int _worldHeight;
 
+        public Arena() { }
+
         public Arena(WindowSettings settings, int worldWidth, int worldHeight)
         {
             _settings = settings;
@@ -80,22 +82,22 @@ namespace Kz.Liero
 
         /// <summary>
         /// Render a chunk of the arena
-        /// </summary>
-        /// <param name="position">top left in the world</param>
-        /// <param name="size">width/height</param>
-        public void Render(Vector2 position, Vector2 size)
+        /// </summary>        
+        public void Render(Rectangle viewPortDimension)
         {
             // check bounds
-            if (!IsInBounds((int)position.X, (int)position.Y)) return;
-            if (!IsInBounds((int)position.X + (int)size.X, (int)position.Y + (int)size.Y)) return;
+            if (!IsInBounds((int)viewPortDimension.X, (int)viewPortDimension.Y)) return;
+            if (!IsInBounds(
+                (int)viewPortDimension.X + (int)viewPortDimension.Width, 
+                (int)viewPortDimension.Y + (int)viewPortDimension.Height)) return;
             
             // render dirt
-            for (var y = 0; y < (int)size.Y; y++)
+            for (var y = 0; y < (int)viewPortDimension.Height; y++)
             {
-                for (var x = 0; x < (int)size.X; x++)
+                for (var x = 0; x < (int)viewPortDimension.Width; x++)
                 {
-                    var worldX = (int)position.X + x;
-                    var worldY = (int)position.Y + y;
+                    var worldX = (int)viewPortDimension.X + x;
+                    var worldY = (int)viewPortDimension.Y + y;
 
                     var index = worldX + worldY * _worldWidth;
                     if (!_dirt[index].IsActive)

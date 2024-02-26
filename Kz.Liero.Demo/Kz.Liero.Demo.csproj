@@ -57,4 +57,10 @@
     <Folder Include="Resources\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Kz.Engine">
+      <HintPath>..\..\KzEngine\bin\Kz.Engine.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

@@ -106,7 +106,11 @@ namespace Kz.Liero
 
         public void Update()
         {
-            _world.Update();
+            _world.Update
+            (
+                _view1.GetViewPortDimension(_world.Player1Position),
+                _view2.GetViewPortDimension(_world.Player2Position)
+            );
         }
 
         public void Render()
@@ -129,7 +133,9 @@ namespace Kz.Liero
 
         public void ProcessInputs()
         {
-            _world.ProcessInputs();
+            _world.ProcessInputs(
+                _view1.GetViewPortDimension(_world.Player1Position), 
+                _view2.GetViewPortDimension(_world.Player2Position));
         }
 
         public void End()

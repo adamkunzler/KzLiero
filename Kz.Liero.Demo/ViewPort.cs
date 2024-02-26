@@ -2,7 +2,7 @@
 using System.Numerics;
 
 namespace Kz.Liero
-{
+{    
     public class ViewPort
     {
         public Vector2 ScreenPosition { get; set; }
@@ -35,12 +35,8 @@ namespace Kz.Liero
             _greyscaleShader = Raylib.LoadShader("", "Shaders/Greyscale.frag");
         }
 
-        public void Render(World world, Vector2 targetCenter)
+        public Rectangle GetViewPortDimension(Vector2 targetCenter)
         {
-            //
-            // calculate boundaries of the viewport in the world
-            //
-
             // get top/left - either 0 or the targetCenter minus halfSize
             var left = Math.Max(0, targetCenter.X - HalfSize.X);
             var top = Math.Max(0, targetCenter.Y - HalfSize.Y);
@@ -51,17 +47,27 @@ namespace Kz.Liero
             {
                 left = _world.WorldWidth - Size.X - 1;
             }
-            
+
             var bottom = top + Size.Y;
             if (bottom > _world.WorldHeight - 1)
             {
                 top = _world.WorldHeight - Size.Y - 1;
             }
 
+            return new Rectangle(new Vector2(left, top), Size);
+        }
+
+        public void Render(World world, Vector2 targetCenter)
+        {
+            //
+            // calculate boundaries of the viewport in the world
+            //
+            var viewPortDimension = GetViewPortDimension(targetCenter);
+            
             //
             // render the world to it's own texture
             //
-            world.Render(new Vector2(left, top), Size);
+            world.Render(viewPortDimension);
 
             //
             // render to target texture
@@ -70,7 +76,7 @@ namespace Kz.Liero
             Raylib.ClearBackground(Color.Black);
             
             // draw background
-            _background.Render(new Vector2(left, top), Size);
+            _background.Render(viewPortDimension);
 
             // render foreground as a shadow
             Raylib.BeginShaderMode(_greyscaleShader);                        

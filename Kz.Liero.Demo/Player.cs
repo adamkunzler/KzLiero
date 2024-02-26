@@ -40,7 +40,7 @@ namespace Kz.Liero
         public WormState State { get; set; }
         private bool _isJumping = false;
 
-        private float _velocityX = 1.5f;                
+        private float _velocityX = 0.75f;                
         private float _velocityY = 0.0f;
         private float _gravity = 0.40f;
         private float _jumpVelocity = -10.5f;
@@ -71,20 +71,21 @@ namespace Kz.Liero
 
         #endregion ctor
 
-        public void Update(Rectangle viewPortDimension)
+        public void Update(Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
         {
             // constrain player position to world boundaries
             // TODO
 
-            //Y += _velocityY;
-            //if (Y > 512)
-            //{
-            //    Y = 512;
-            //    _isJumping = false;
-            //}
-
-            //_velocityY += _gravity;
-            //if (_velocityY > 100) _velocityY = 100; // ?? Better way to do this...keep it from continuing to climb
+            Y += _velocityY;
+            var isCollision = IsCollision(viewPortDimension.Position, dirtAt);
+            if(isCollision)
+            {
+                Y -= _velocityY;
+                _isJumping = false;
+            }
+            
+            _velocityY += _gravity;
+            if (_velocityY > 10) _velocityY = 10; // ?? Better way to do this...keep it from continuing to climb
 
             //
             // Calculate FrameIndex

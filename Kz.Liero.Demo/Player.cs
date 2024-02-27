@@ -44,9 +44,8 @@ namespace Kz.Liero
         private float _velocityY = 0.0f;
         private float _gravity = 0.10f;
         private float _jumpVelocity = -2.5f;
-        private float _lateralMoveYAmount = 0.35f;
-
-
+        private float _walkingYAdjustment = 1.0f;
+        
 
         public Player(float x, float y, Color color)
         {
@@ -72,33 +71,58 @@ namespace Kz.Liero
 
         #endregion ctor
 
-        public void Update(Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
+        public void Update(float worldWidth, float worldHeight, Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
         {
             // constrain player position to world boundaries
-            // TODO
+            #region Constrain to World
 
-            _velocityY += _gravity;
+            var halfSize = Size / 2.0f;
+            if (X < halfSize) X = halfSize;
+            else if (X > worldWidth - halfSize) X = worldWidth - halfSize;
+
+            if (Y < halfSize) Y = halfSize;
+            else if (Y > worldHeight - halfSize) Y = worldHeight - halfSize;
+
+            #endregion Constrain to World
+
+            //
+            // update worm position/velocity
+            //            
+            _velocityY += _gravity;            
             Y += _velocityY;
-            
-            var isTopCollision = IsCollisionTop(viewPortDimension.Position, dirtAt);
-            var isCollision = IsCollision(viewPortDimension.Position, dirtAt);
 
-            if (isTopCollision && !isCollision)
-            {
-                Y += 0.5f;
+            //
+            // check top/bottom collisions
+            //
+            #region Top/Bottom collisions
+            var isTopCollision = IsCollisionTop(viewPortDimension.Position, dirtAt);
+            var isBottomCollision = IsCollisionBottom(viewPortDimension.Position, dirtAt);
+                        
+            if (isTopCollision.IsCollision && !isBottomCollision)
+            {               
+                _velocityY = 0;
             }
             
-            if (isCollision)
+            if (isBottomCollision)
             {                
                 Y -= _velocityY;
                 _velocityY = 0;
                 _isJumping = false;
                 
-            } 
-            
+            }
+
+            // prevent jumping when falling
+            if(_velocityY > 0)
+            {
+                _isJumping = true;
+            }
+
+            #endregion Top/Bottom collisions
+
             //
             // Calculate FrameIndex
             //
+            #region Calculate FrameIndex
             if (State == WormState.Still)
             {
                 _sprite.SetDefaultState();
@@ -107,10 +131,12 @@ namespace Kz.Liero
             {
                 _sprite.Update();
             }
+            #endregion Calculate FrameIndex
 
             //
-            // Calculate SpriteIndex
+            // Calculate SpriteIndex based on aimAngle
             //
+            #region Calculate SpriteIndex based on AimAngle
             var spriteIndex = 0;
             if (Direction == WormDir.Right)
             {
@@ -133,6 +159,7 @@ namespace Kz.Liero
 
             spriteIndex = Math.Clamp(spriteIndex, 0, 6);
             _sprite.SetSpriteAnimationIndex(spriteIndex);
+            #endregion Calculate SpriteIndex based on AimAngle
         }
 
         public void Render(Vector2 worldPosition)
@@ -146,6 +173,7 @@ namespace Kz.Liero
             var yy = y + MathF.Sin(AimAngle) * 25.0f;
             Raylib.DrawRectangleLines((int)xx, (int)yy, 3, 3, Color.Red);
 
+            // render bounding boxes/collision pixels
             if (false)
             {
                 //// bounding box
@@ -161,17 +189,22 @@ namespace Kz.Liero
                 //    (int)smallAABB.X, (int)smallAABB.Y,
                 //    (int)smallAABB.Width, (int)smallAABB.Height,
                 //    Color.Blue);
-                
-                var pixels = GetCollisionPixels(worldPosition);
+
+                var pixels = new List<(int X, int Y)>();                
+                pixels.AddRange(GetSideCollisionPixels(worldPosition));
                 foreach (var p in pixels)
                 {
                     Raylib.DrawPixel(p.X, p.Y, Color.Red);                    
                 }
 
-                foreach(var p in _recentCollisions)
+                var pixels2 = new List<(int X, int Y)>();
+                pixels2.AddRange(GetTopCollisionPixels(worldPosition));
+                pixels2.AddRange(GetBottomCollisionPixels(worldPosition));
+                foreach (var p in pixels2)
                 {
                     Raylib.DrawPixel(p.X, p.Y, Color.Blue);
                 }
+
             }
         }
 
@@ -188,13 +221,19 @@ namespace Kz.Liero
             State = WormState.Moving;
 
             X += _velocityX;
-            Y -= _lateralMoveYAmount;
-            
-            var isCollision = IsCollision(worldPosition, dirtAt);
+                        
+            var isCollision = IsCollisionSides(worldPosition, dirtAt);
             if (isCollision)
             {
-                X -= _velocityX;
-                Y += _lateralMoveYAmount;
+                // try to move up a little and check for collision again
+                Y -= _walkingYAdjustment;
+
+                isCollision = IsCollisionSides(worldPosition, dirtAt);
+                if (isCollision)
+                {
+                    Y += _walkingYAdjustment;
+                    X -= _velocityX;
+                }                                
             }
 
             if (Direction == WormDir.Left)
@@ -208,17 +247,21 @@ namespace Kz.Liero
         public void MoveLeft(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
         {
             State = WormState.Moving;
-
-            var isCollision1 = IsCollision(worldPosition, dirtAt);
-
+            
             X -= _velocityX;
-            Y -= _lateralMoveYAmount;
-
-            var isCollision = IsCollision(worldPosition, dirtAt);
+            
+            var isCollision = IsCollisionSides(worldPosition, dirtAt);
             if (isCollision)
             {
-                X += _velocityX;
-                Y += _lateralMoveYAmount;
+                // try to move up a little and check for collision again
+                Y -= _walkingYAdjustment;
+
+                isCollision = IsCollisionSides(worldPosition, dirtAt);
+                if (isCollision)
+                {
+                    Y += _walkingYAdjustment;
+                    X += _velocityX;
+                }
             }
 
             if (Direction == WormDir.Right)
@@ -277,9 +320,50 @@ namespace Kz.Liero
 
         #region Bounding Boxes / Collision Detection
         
-        public bool IsCollisionTop(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
+        /// <summary>
+        /// Check if there was a collision at the top of the player
+        /// </summary>        
+        public (bool IsCollision, float Y) IsCollisionTop(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
         {
             var pixels = GetTopCollisionPixels(worldPosition);
+            for (var i = 0; i < pixels.Count; i++)
+            {
+                var dirt = dirtAt((int)worldPosition.X + pixels[i].X, (int)worldPosition.Y + pixels[i].Y);
+                if (dirt == null) continue;
+                if (dirt.Value.IsActive)
+                {                    
+                    return (true, pixels[i].Y);
+                }
+            }
+
+            return (false, 0.0f);
+        }
+
+        /// <summary>
+        /// Check if there was a collision at either side of the player
+        /// </summary>        
+        public bool IsCollisionSides(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
+        {
+            var pixels = GetSideCollisionPixels(worldPosition);
+            for (var i = 0; i < pixels.Count; i++)
+            {
+                var dirt = dirtAt((int)worldPosition.X + pixels[i].X, (int)worldPosition.Y + pixels[i].Y);
+                if (dirt == null) continue;
+                if (dirt.Value.IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Check if there was a collission at the bottom of the player
+        /// </summary>        
+        public bool IsCollisionBottom(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
+        {            
+            var pixels = GetBottomCollisionPixels(worldPosition);
             for (var i = 0; i < pixels.Count; i++)
             {
                 var dirt = dirtAt((int)worldPosition.X + pixels[i].X, (int)worldPosition.Y + pixels[i].Y);
@@ -289,28 +373,6 @@ namespace Kz.Liero
                     return true;
                 }
             }
-
-            return false;
-        }
-
-        private List<(int X, int Y)> _recentCollisions = new List<(int X, int Y)>();
-        public bool IsCollision(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
-        {
-            _recentCollisions.Clear();
-
-            var pixels = GetCollisionPixels(worldPosition);
-            for (var i = 0; i < pixels.Count; i++)
-            {
-                var dirt = dirtAt((int)worldPosition.X + pixels[i].X, (int)worldPosition.Y + pixels[i].Y);
-                if (dirt == null) continue;
-                if (dirt.Value.IsActive)
-                {
-                    _recentCollisions.Add((pixels[i].X, pixels[i].Y));
-                    //return true;
-                }
-            }
-
-            if (_recentCollisions.Count > 0) return true;
 
             return false;
         }
@@ -339,23 +401,15 @@ namespace Kz.Liero
         }
 
         /// <summary>
-        /// Get a list of pixels from the borders of the collision bounding box
+        /// Get a list of pixels from the left/right borders of the collision bounding box
         /// </summary>        
-        private List<(int X, int Y)> GetCollisionPixels(Vector2 worldPosition)
+        private List<(int X, int Y)> GetSideCollisionPixels(Vector2 worldPosition)
         {
             var aabb = GetCollisionBoundingBox(worldPosition);
-            var pixelsPerSide = 1;
+            var pixelsPerSide = 3;
             var pixels = new List<(int X, int Y)>();
-
-            // get top and bottom points
-            var stepX = (int)(aabb.Width / pixelsPerSide);
-            for(var x = 0; x < aabb.Width; x += stepX)
-            {
-                //pixels.Add(((int)(aabb.X + x), (int)aabb.Y)); // top
-                pixels.Add(((int)(aabb.X + x), (int)(aabb.Y + aabb.Height - 1))); // bottom
-            }
-
-            // get left and right points
+            
+            // get left and right points (skipping any top and bottom pixels)
             var stepY = (int)(aabb.Height / pixelsPerSide);
             for (var y = stepY; y < aabb.Height; y += stepY)
             {
@@ -367,12 +421,12 @@ namespace Kz.Liero
         }
 
         /// <summary>
-        /// Get a list of pixels from the borders of the collision bounding box
+        /// Get a list of pixels from the top border of the collision bounding box
         /// </summary>        
         private List<(int X, int Y)> GetTopCollisionPixels(Vector2 worldPosition)
         {
             var aabb = GetCollisionBoundingBox(worldPosition);
-            var pixelsPerSide = 1;
+            var pixelsPerSide = 3;
             var pixels = new List<(int X, int Y)>();
 
             // get top and bottom points
@@ -380,6 +434,24 @@ namespace Kz.Liero
             for (var x = 0; x < aabb.Width; x += stepX)
             {
                 pixels.Add(((int)(aabb.X + x), (int)aabb.Y)); // top                
+            }
+
+            return pixels;
+        }
+
+        /// <summary>
+        /// Get a list of pixels from the bottom border of the collision bounding box
+        /// </summary>        
+        private List<(int X, int Y)> GetBottomCollisionPixels(Vector2 worldPosition)
+        {
+            var aabb = GetCollisionBoundingBox(worldPosition);
+            var pixelsPerSide = 3;
+            var pixels = new List<(int X, int Y)>();
+            
+            var stepX = (int)(aabb.Width / pixelsPerSide);
+            for (var x = 0; x < aabb.Width; x += stepX)
+            {
+                pixels.Add(((int)(aabb.X + x), (int)(aabb.Y + aabb.Height - 1))); // bottom
             }
 
             return pixels;

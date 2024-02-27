@@ -136,22 +136,10 @@ namespace Kz.Liero
             if (Raylib.IsKeyDown(KeyboardKey.Left))
             {
                 _player2.MoveLeft(viewPortDimension2.Position, _arena.DirtAt);
-
-                if (Raylib.IsKeyPressed(KeyboardKey.RightControl))
-                {
-                    var dir = _player2.GetAimAngleVector(viewPortDimension2.Position) * DIG_DISTANCE;
-                    Dig(_player2.Position, new Vector2(dir.X, dir.Y)); 
-                }
             }
             else if (Raylib.IsKeyDown(KeyboardKey.Right))
             {
-                _player2.MoveRight(viewPortDimension2.Position, _arena.DirtAt);
-
-                if (Raylib.IsKeyPressed(KeyboardKey.RightControl))
-                {
-                    var dir = _player2.GetAimAngleVector(viewPortDimension2.Position) * DIG_DISTANCE;
-                    Dig(_player2.Position, new Vector2(dir.X, dir.Y));
-                }
+                _player2.MoveRight(viewPortDimension2.Position, _arena.DirtAt);                
             }
 
             if (Raylib.IsKeyPressed(KeyboardKey.RightControl))
@@ -164,13 +152,17 @@ namespace Kz.Liero
             if (Raylib.IsKeyUp(KeyboardKey.Right) && !Raylib.IsKeyDown(KeyboardKey.Left)) { _player2.State = WormState.Still; }
 
             if (Raylib.IsKeyDown(KeyboardKey.Up))
-            {
-                //_player2.Move(new Vector2(0, -_playerSpeed), WorldWidth, WorldHeight);
+            {                
                 _player2.Aim(-1);
             }
             else if (Raylib.IsKeyDown(KeyboardKey.Down))
             {
                 _player2.Aim(1);
+            }
+
+            if (Raylib.IsKeyPressed(KeyboardKey.Space))
+            {
+                _player2.Jump();
             }
 
             #endregion Player 2 Controls

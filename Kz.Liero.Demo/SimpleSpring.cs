@@ -1,6 +1,6 @@
 ﻿using Kz.Engine.DataStructures;
 
-namespace Kz.Liero.Demo
+namespace Kz.Liero
 {
     /// <summary>
     /// Represents a simple spring

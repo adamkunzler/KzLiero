@@ -45,13 +45,19 @@ namespace Kz.Liero
         private float _gravity = 0.10f;
         private float _jumpVelocity = -2.5f;
         private float _walkingYAdjustment = 1.0f;
-        
+
+        private GrapplingHook _hook;
+        private float _grapplingHookMaxLength = 100.0f;
+        private float _grapplingHookGravity = 0.75f;
+
 
         public Player(float x, float y, Color color)
         {
             X = x;
             Y = y;
             _color = color;
+
+            _hook = new GrapplingHook(_grapplingHookMaxLength, _grapplingHookGravity);
 
             State = WormState.Still;
             var config = new SpriteConfig
@@ -73,6 +79,14 @@ namespace Kz.Liero
 
         public void Update(float worldWidth, float worldHeight, Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
         {
+            //
+            // update grappling gook
+            //
+            _hook.Update(X, Y, worldWidth, worldHeight);
+            var springForce = _hook.GetSpringForce(new Engine.DataStructures.Vector2f(X, Y));
+            _velocityX += springForce.X;
+            _velocityY += springForce.Y;
+
             // constrain player position to world boundaries
             #region Constrain to World
 
@@ -160,6 +174,14 @@ namespace Kz.Liero
             spriteIndex = Math.Clamp(spriteIndex, 0, 6);
             _sprite.SetSpriteAnimationIndex(spriteIndex);
             #endregion Calculate SpriteIndex based on AimAngle
+
+            //
+            // make sure grappling hook start and player location are synced
+            //
+            if(_hook.IsHooked)
+            {
+                _hook.SetStart(new Engine.DataStructures.Vector2f(X, Y));
+            }
         }
 
         public void Render(Vector2 worldPosition)
@@ -172,6 +194,8 @@ namespace Kz.Liero
             var xx = x + MathF.Cos(AimAngle) * 25.0f;
             var yy = y + MathF.Sin(AimAngle) * 25.0f;
             Raylib.DrawRectangleLines((int)xx, (int)yy, 3, 3, Color.Red);
+
+            _hook.Render(worldPosition, Color.Red);
 
             // render bounding boxes/collision pixels
             if (false)
@@ -305,12 +329,23 @@ namespace Kz.Liero
             }
         }
 
-        public void Jump()
+        public void JumpOrHook()
         {
-            if (_isJumping) return;
+            if (_isJumping)
+            {
+                // Grappling Hook
+                _hook.Fire(X, Y, AimAngle);
+            }
+            else
+            {
+                // JUMP
+                _hook.Disable();
 
-            _velocityY = _jumpVelocity;
-            _isJumping = true;
+                if (_isJumping) return;
+
+                _velocityY = _jumpVelocity;
+                _isJumping = true;
+            }
         }
 
         public void Cleanup()

@@ -160,9 +160,9 @@ namespace Kz.Liero
                 _player2.Aim(1);
             }
 
-            if (Raylib.IsKeyPressed(KeyboardKey.Space))
+            if (Raylib.IsKeyPressed(KeyboardKey.RightShift))
             {
-                _player2.Jump();
+                _player2.JumpOrHook();
             }
 
             #endregion Player 2 Controls

@@ -1,8 +1,14 @@
 ﻿using Kz.Engine.DataStructures;
 using Raylib_cs;
+using System.Numerics;
 
-namespace Kz.Liero.Demo
+namespace Kz.Liero
 {
+    /*
+        TODO 
+        [] bug where worm gets transported to edge
+        [] grappling hook needs to expire if it doesn't attach to anything after n-seconds
+    */
     public class GrapplingHook
     {
         private Vector2f _fireVelocity = new();
@@ -53,9 +59,11 @@ namespace Kz.Liero.Demo
         /// <summary>
         /// Initialize the grappling hook
         /// </summary>
-        public GrapplingHook()
+        public GrapplingHook(float maxLength, float gravity)
         {
             _spring = new SimpleSpring(7.5f, 0.009f);
+            _maxLength = maxLength;
+            _gravity = gravity;
         }
 
         /// <summary>
@@ -126,11 +134,13 @@ namespace Kz.Liero.Demo
         /// <summary>
         /// Renders the grappling hook if it's active
         /// </summary>        
-        public void Render(Color color)
+        public void Render(Vector2 worldPosition, Color color)
         {
             if (!_isActive) return;
-
-            Raylib.DrawLine((int)_start.X, (int)_start.Y, (int)_end.X, (int)_end.Y, color);
+            
+            Raylib.DrawLine(
+                (int)(_start.X - worldPosition.X), (int)(_start.Y - worldPosition.Y), 
+                (int)(_end.X - worldPosition.X), (int)(_end.Y - worldPosition.Y), color);
         }
         
         /// <summary>

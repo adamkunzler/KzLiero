@@ -16,7 +16,7 @@ namespace Kz.POC.GrappleHook
         /// </summary>
         private float _horizontalSpeed = 5.0f;
 
-        private Vector2f _gravity = new(0.0f, 3.5f);
+        private Vector2f _gravity = new(0.0f, 1.5f);
 
         private Vector2f _jumpVelocity = new(0.0f, -25.0f);
 

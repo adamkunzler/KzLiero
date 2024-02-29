@@ -70,7 +70,7 @@ namespace Kz.Liero
         /// Syncs the start of the grappling hook and updates the hooks 
         /// position if the hook is active and not attached to anything
         /// </summary>        
-        public void Update(float startX, float startY, float worldWidth, float worldHeight)
+        public void Update(float startX, float startY, float worldWidth, float worldHeight, Func<int, int, Dirt?> dirtAt)
         {
             _start.X = startX;
             _start.Y = startY;
@@ -94,27 +94,31 @@ namespace Kz.Liero
             }
 
             // check for dirt collision
-            // TODO
+            var dirt = dirtAt((int)_end.X, (int)_end.Y);
+            if (dirt.HasValue && dirt.Value.IsActive)
+            {                
+                _isHooked = true;
+            }
 
             // check for collision on world bounds and set the hook
             if (_end.X > worldWidth)
             {
-                _end.X = worldWidth;
+                _end.X = worldWidth - 1;
                 _isHooked = true;
             }
             if (_end.X < 0)
             {
-                _end.X = 0;
+                _end.X = 1;
                 _isHooked = true;
             }
             if (_end.Y > worldHeight)
             {
-                _end.Y = worldHeight;
+                _end.Y = worldHeight - 1;
                 _isHooked = true;
             }
             if (_end.Y < 0)
             {
-                _end.Y = 0;
+                _end.Y = 1;
                 _isHooked = true;
             }
         }

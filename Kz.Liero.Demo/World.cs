@@ -23,11 +23,11 @@ namespace Kz.Liero
         public RenderTexture2D Target => _target!.Value;
 
         private Arena _arena = new();
-        private Player _player1 = new(0,0, Color.RayWhite);
-        private Player _player2 = new(0, 0, Color.RayWhite);
+        private Player _player1 = new(0, 0, Color.RayWhite, 1);
+        private Player _player2 = new(0, 0, Color.RayWhite, 2);
 
         private static float _playerSpeed = 1.75f;
-                        
+
         public Vector2 Player1Position => _player1.Position;
         public Vector2 Player2Position => _player2.Position;
         public Color Player1Color => _player1.Color;
@@ -53,20 +53,20 @@ namespace Kz.Liero
             _arena.Init();
 
             _player1 = new Player(
-                _random.Next(10, _worldWidth - 10), 
-                _random.Next(10, _worldWidth - 10), 
-                Color.Green);            
+                _random.Next(10, _worldWidth - 10),
+                _random.Next(10, _worldWidth - 10),
+                Color.Green, 1);
             _arena.RemoveDirt((int)_player1.Position.X, (int)_player1.Position.Y, DIG_SIZE);
 
             _player2 = new Player(
-                _random.Next(10, _worldWidth - 10), 
-                _random.Next(10, _worldWidth - 10), 
-                Color.Purple);            
+                _random.Next(10, _worldWidth - 10),
+                _random.Next(10, _worldWidth - 10),
+                Color.Purple, 2);
             _arena.RemoveDirt((int)_player2.Position.X, (int)_player2.Position.Y, DIG_SIZE);
         }
-        
+
         public void Update(Rectangle viewPortDimension1, Rectangle viewPortDimension2)
-        {            
+        {
             _arena.Update();
             _player1.Update(_worldWidth, _worldHeight, viewPortDimension1, _arena.DirtAt);
             _player2.Update(_worldWidth, _worldHeight, viewPortDimension2, _arena.DirtAt);
@@ -74,13 +74,13 @@ namespace Kz.Liero
 
         /// <summary>
         /// Render a chunk of the world defined by an AABB
-        /// </summary>        
+        /// </summary>
         public void Render(Rectangle viewPortDimension)
-        {            
+        {
             if (!_target.HasValue)
             {
                 _target = Raylib.LoadRenderTexture(
-                    (int)viewPortDimension.Width, 
+                    (int)viewPortDimension.Width,
                     (int)viewPortDimension.Height);
             }
 
@@ -91,8 +91,8 @@ namespace Kz.Liero
 
             // render entities (weapons, particles, etc)
             // TODO
-            
-            // render players (if in bounds)            
+
+            // render players (if in bounds)
             RenderPlayers(viewPortDimension);
 
             Raylib.EndTextureMode();
@@ -107,7 +107,7 @@ namespace Kz.Liero
             }
 
             #region Player 1 Controls
-            
+
             if (Raylib.IsKeyDown(KeyboardKey.A))
             {
                 _player1.MoveLeft(viewPortDimension1.Position, _arena.DirtAt);
@@ -132,14 +132,14 @@ namespace Kz.Liero
             #endregion Player 1 Controls
 
             #region Player 2 Controls
-            
+
             if (Raylib.IsKeyDown(KeyboardKey.Left))
             {
                 _player2.MoveLeft(viewPortDimension2.Position, _arena.DirtAt);
             }
             else if (Raylib.IsKeyDown(KeyboardKey.Right))
             {
-                _player2.MoveRight(viewPortDimension2.Position, _arena.DirtAt);                
+                _player2.MoveRight(viewPortDimension2.Position, _arena.DirtAt);
             }
 
             if (Raylib.IsKeyPressed(KeyboardKey.RightControl))
@@ -152,7 +152,7 @@ namespace Kz.Liero
             if (Raylib.IsKeyUp(KeyboardKey.Right) && !Raylib.IsKeyDown(KeyboardKey.Left)) { _player2.State = WormState.Still; }
 
             if (Raylib.IsKeyDown(KeyboardKey.Up))
-            {                
+            {
                 _player2.Aim(-1);
             }
             else if (Raylib.IsKeyDown(KeyboardKey.Down))
@@ -162,7 +162,12 @@ namespace Kz.Liero
 
             if (Raylib.IsKeyPressed(KeyboardKey.RightShift))
             {
-                _player2.JumpOrHook();
+                _player2.Jump();
+            }
+
+            if (Raylib.IsKeyPressed(KeyboardKey.Slash))
+            {
+                _player2.FireGrapplingHook();
             }
 
             #endregion Player 2 Controls
@@ -175,7 +180,7 @@ namespace Kz.Liero
 
         public Dirt? DirtAt(int x, int y)
         {
-            var dirt =_arena.DirtAt(x, y);
+            var dirt = _arena.DirtAt(x, y);
             return dirt;
         }
 
@@ -186,7 +191,7 @@ namespace Kz.Liero
         /// </summary>
         /// <param name="viewPortDimension"></param>
         private void RenderPlayers(Rectangle viewPortDimension)
-            {
+        {
             var maxBounds = new Vector2
             (
                 viewPortDimension.X + viewPortDimension.Width,

@@ -1,4 +1,5 @@
-﻿using Kz.Engine.Trigonometry;
+﻿using Kz.Engine.DataStructures;
+using Kz.Engine.Trigonometry;
 using Kz.Liero.Utilities;
 using Raylib_cs;
 using System.Numerics;
@@ -22,6 +23,8 @@ namespace Kz.Liero
     {
         #region ctor
 
+        public int Id { get; init; }
+
         public float X { get; set; }
         public float Y { get; set; }
         public Vector2 Position => new(X, Y);
@@ -40,7 +43,8 @@ namespace Kz.Liero
         public WormState State { get; set; }
         private bool _isJumping = false;
 
-        private float _velocityX = 0.75f;                
+        private float _walkingSpeed = 0.75f;
+        private float _velocityX = 0.0f;                
         private float _velocityY = 0.0f;
         private float _gravity = 0.10f;
         private float _jumpVelocity = -2.5f;
@@ -51,8 +55,10 @@ namespace Kz.Liero
         private float _grapplingHookGravity = 0.75f;
 
 
-        public Player(float x, float y, Color color)
+        public Player(float x, float y, Color color, int id)
         {
+            Id = id;
+
             X = x;
             Y = y;
             _color = color;
@@ -79,30 +85,21 @@ namespace Kz.Liero
 
         public void Update(float worldWidth, float worldHeight, Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
         {
+            var oldPosition = new Vector2f(X, Y);
+
             //
             // update grappling gook
             //
-            _hook.Update(X, Y, worldWidth, worldHeight);
+            _hook.Update(X, Y, worldWidth, worldHeight, dirtAt);
             var springForce = _hook.GetSpringForce(new Engine.DataStructures.Vector2f(X, Y));
-            _velocityX += springForce.X;
-            _velocityY += springForce.Y;
-
-            // constrain player position to world boundaries
-            #region Constrain to World
-
-            var halfSize = Size / 2.0f;
-            if (X < halfSize) X = halfSize;
-            else if (X > worldWidth - halfSize) X = worldWidth - halfSize;
-
-            if (Y < halfSize) Y = halfSize;
-            else if (Y > worldHeight - halfSize) Y = worldHeight - halfSize;
-
-            #endregion Constrain to World
 
             //
             // update worm position/velocity
-            //            
-            _velocityY += _gravity;            
+            //                        
+            _velocityX += springForce.X;
+            _velocityY += _gravity + springForce.Y;
+                        
+            X += _velocityX;
             Y += _velocityY;
 
             //
@@ -111,27 +108,46 @@ namespace Kz.Liero
             #region Top/Bottom collisions
             var isTopCollision = IsCollisionTop(viewPortDimension.Position, dirtAt);
             var isBottomCollision = IsCollisionBottom(viewPortDimension.Position, dirtAt);
-                        
-            if (isTopCollision.IsCollision && !isBottomCollision)
-            {               
-                _velocityY = 0;
-            }
-            
-            if (isBottomCollision)
-            {                
-                Y -= _velocityY;
-                _velocityY = 0;
-                _isJumping = false;
-                
+            var isSideCollision = IsCollisionSides(viewPortDimension.Position, dirtAt);
+
+            if (isTopCollision && !isBottomCollision)
+            {
+                _velocityY = 0;                
             }
 
+            if (isBottomCollision)
+            {
+                Y -= _velocityY;
+                _velocityY = 0;                
+                _isJumping = false;
+
+            }
+
+            if (isSideCollision)
+            {
+                X -= _velocityX;
+                _velocityX = 0;
+            }
+            
             // prevent jumping when falling
-            if(_velocityY > 0)
+            if (_velocityY > 0)
             {
                 _isJumping = true;
             }
 
             #endregion Top/Bottom collisions
+
+            // constrain player position to world boundaries
+            #region Constrain to World
+
+            var halfSize = Size / 2.0f;
+            if (X < halfSize) X = halfSize;
+            if (X > worldWidth - halfSize + 1) X = worldWidth - halfSize + 1;
+
+            if (Y < halfSize) Y = halfSize;
+            if (Y > worldHeight - halfSize + 1) Y = worldHeight - halfSize + 1;
+
+            #endregion Constrain to World
 
             //
             // Calculate FrameIndex
@@ -198,8 +214,12 @@ namespace Kz.Liero
             _hook.Render(worldPosition, Color.Red);
 
             // render bounding boxes/collision pixels
-            if (false)
+            if (true)
             {
+                foreach(var item in _temp)
+                {
+                    Raylib.DrawPixel(item.X, item.Y, Color.Blue);
+                }
                 //// bounding box
                 //var aabb = GetBoundingBox(worldPosition);
                 //Raylib.DrawRectangleLines(
@@ -214,20 +234,20 @@ namespace Kz.Liero
                 //    (int)smallAABB.Width, (int)smallAABB.Height,
                 //    Color.Blue);
 
-                var pixels = new List<(int X, int Y)>();                
-                pixels.AddRange(GetSideCollisionPixels(worldPosition));
-                foreach (var p in pixels)
-                {
-                    Raylib.DrawPixel(p.X, p.Y, Color.Red);                    
-                }
+                //var pixels = new List<(int X, int Y)>();                
+                //pixels.AddRange(GetSideCollisionPixels(worldPosition));
+                //foreach (var p in pixels)
+                //{
+                //    Raylib.DrawPixel(p.X, p.Y, Color.Red);                    
+                //}
 
-                var pixels2 = new List<(int X, int Y)>();
-                pixels2.AddRange(GetTopCollisionPixels(worldPosition));
-                pixels2.AddRange(GetBottomCollisionPixels(worldPosition));
-                foreach (var p in pixels2)
-                {
-                    Raylib.DrawPixel(p.X, p.Y, Color.Blue);
-                }
+                //var pixels2 = new List<(int X, int Y)>();
+                //pixels2.AddRange(GetTopCollisionPixels(worldPosition));
+                //pixels2.AddRange(GetBottomCollisionPixels(worldPosition));
+                //foreach (var p in pixels2)
+                //{
+                //    Raylib.DrawPixel(p.X, p.Y, Color.Blue);
+                //}
 
             }
         }
@@ -244,8 +264,8 @@ namespace Kz.Liero
         {
             State = WormState.Moving;
 
-            X += _velocityX;
-                        
+            X += _walkingSpeed;
+            
             var isCollision = IsCollisionSides(worldPosition, dirtAt);
             if (isCollision)
             {
@@ -256,7 +276,8 @@ namespace Kz.Liero
                 if (isCollision)
                 {
                     Y += _walkingYAdjustment;
-                    X -= _velocityX;
+                    X -= _walkingSpeed;                    
+
                 }                                
             }
 
@@ -272,8 +293,7 @@ namespace Kz.Liero
         {
             State = WormState.Moving;
             
-            X -= _velocityX;
-            
+            X -= _walkingSpeed;            
             var isCollision = IsCollisionSides(worldPosition, dirtAt);
             if (isCollision)
             {
@@ -284,7 +304,7 @@ namespace Kz.Liero
                 if (isCollision)
                 {
                     Y += _walkingYAdjustment;
-                    X += _velocityX;
+                    X += _walkingSpeed;                    
                 }
             }
 
@@ -329,23 +349,19 @@ namespace Kz.Liero
             }
         }
 
-        public void JumpOrHook()
-        {
-            if (_isJumping)
-            {
-                // Grappling Hook
-                _hook.Fire(X, Y, AimAngle);
-            }
-            else
-            {
-                // JUMP
-                _hook.Disable();
+        public void FireGrapplingHook()
+        {                        
+            _hook.Fire(X, Y, AimAngle);            
+        }
 
-                if (_isJumping) return;
+        public void Jump()
+        {            
+            _hook.Disable();
 
-                _velocityY = _jumpVelocity;
-                _isJumping = true;
-            }
+            if (_isJumping) return;
+
+            _velocityY = _jumpVelocity;
+            _isJumping = true;            
         }
 
         public void Cleanup()
@@ -355,10 +371,29 @@ namespace Kz.Liero
 
         #region Bounding Boxes / Collision Detection
         
+        private List<(int X, int Y)> _temp = new List<(int X, int Y)> ();
+        private bool IsCollision(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
+        {
+            _temp.Clear();
+            var aabb = GetCollisionBoundingBox(worldPosition);
+            for(var y = 0; y < (int)aabb.Height; y++)
+            {
+                for(var x = 0; x < (int)aabb.Width; x++)
+                {                    
+                    var dirt = dirtAt((int)worldPosition.X + (int)aabb.X + x, (int)worldPosition.Y + (int)aabb.Y + y);
+                    if (dirt.HasValue && dirt.Value.IsActive) {
+                        _temp.Add(((int)aabb.X + x, (int)aabb.Y + y));// return true; 
+                    }                    
+                }
+            }
+            return _temp.Count > 0;
+        }
+
+
         /// <summary>
         /// Check if there was a collision at the top of the player
         /// </summary>        
-        public (bool IsCollision, float Y) IsCollisionTop(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
+        public bool IsCollisionTop(Vector2 worldPosition, Func<int, int, Dirt?> dirtAt)
         {
             var pixels = GetTopCollisionPixels(worldPosition);
             for (var i = 0; i < pixels.Count; i++)
@@ -367,11 +402,11 @@ namespace Kz.Liero
                 if (dirt == null) continue;
                 if (dirt.Value.IsActive)
                 {                    
-                    return (true, pixels[i].Y);
+                    return true;
                 }
             }
 
-            return (false, 0.0f);
+            return false;
         }
 
         /// <summary>

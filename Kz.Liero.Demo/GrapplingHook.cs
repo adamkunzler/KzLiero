@@ -94,6 +94,7 @@ namespace Kz.Liero
             }
 
             // check for dirt collision
+            // TODO need to make smaller steps in direction of hook to find collision sooner
             var dirt = dirtAt((int)_end.X, (int)_end.Y);
             if (dirt.HasValue && dirt.Value.IsActive)
             {                

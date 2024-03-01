@@ -145,7 +145,11 @@ namespace Kz.Liero
             if (X > worldWidth - halfSize + 1) X = worldWidth - halfSize + 1;
 
             if (Y < halfSize) Y = halfSize;
-            if (Y > worldHeight - halfSize + 1) Y = worldHeight - halfSize + 1;
+            if (Y > worldHeight - halfSize + 1)
+            {
+                Y = worldHeight - halfSize + 1;
+                _isJumping = false;
+            }
 
             #endregion Constrain to World
 

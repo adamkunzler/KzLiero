@@ -83,14 +83,18 @@ namespace Kz.Liero
 
         #endregion ctor
 
-        public void Update(float worldWidth, float worldHeight, Rectangle viewPortDimension, Func<int, int, Dirt?> dirtAt)
+        public void Update(
+            float worldWidth, float worldHeight, 
+            Rectangle viewPortDimension, 
+            Func<int, int, Dirt?> dirtAt,
+            Player other)
         {
             var oldPosition = new Vector2f(X, Y);
 
             //
             // update grappling gook
             //
-            _hook.Update(X, Y, worldWidth, worldHeight, dirtAt);
+            _hook.Update(X, Y, worldWidth, worldHeight, dirtAt, other, viewPortDimension.Position);
             var springForce = _hook.GetSpringForce(new Engine.DataStructures.Vector2f(X, Y));
 
             //
@@ -462,7 +466,7 @@ namespace Kz.Liero
             return new Rectangle(x, y, width, height);
         }
 
-        private Rectangle GetCollisionBoundingBox(Vector2 worldPosition)
+        public Rectangle GetCollisionBoundingBox(Vector2 worldPosition)
         {
             var Size = 10;
             var aabb = GetBoundingBox(worldPosition);            

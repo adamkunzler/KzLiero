@@ -68,8 +68,8 @@ namespace Kz.Liero
         public void Update(Rectangle viewPortDimension1, Rectangle viewPortDimension2)
         {
             _arena.Update();
-            _player1.Update(_worldWidth, _worldHeight, viewPortDimension1, _arena.DirtAt);
-            _player2.Update(_worldWidth, _worldHeight, viewPortDimension2, _arena.DirtAt);
+            _player1.Update(_worldWidth, _worldHeight, viewPortDimension1, _arena.DirtAt, _player2);
+            _player2.Update(_worldWidth, _worldHeight, viewPortDimension2, _arena.DirtAt, _player1);
         }
 
         /// <summary>

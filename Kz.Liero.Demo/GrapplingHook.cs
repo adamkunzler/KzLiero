@@ -1,4 +1,5 @@
 ﻿using Kz.Engine.DataStructures;
+using Kz.Liero.Demo.Utilities;
 using Raylib_cs;
 using System.Numerics;
 
@@ -70,7 +71,12 @@ namespace Kz.Liero
         /// Syncs the start of the grappling hook and updates the hooks 
         /// position if the hook is active and not attached to anything
         /// </summary>        
-        public void Update(float startX, float startY, float worldWidth, float worldHeight, Func<int, int, Dirt?> dirtAt)
+        public void Update(
+            float startX, float startY, 
+            float worldWidth, float worldHeight, 
+            Func<int, int, Dirt?> dirtAt,
+            Player other,
+            Vector2 worldPosition)
         {
             _start.X = startX;
             _start.Y = startY;
@@ -86,19 +92,41 @@ namespace Kz.Liero
             _end.Y += MathF.Sin(_initAngle) * _fireVelocity.Y;
 
             // constrain grapple length
+            var dir = (_end - _start).Normal();
             var length = (_end - _start).Magnitude();
             if (length > _maxLength)
-            {
-                var dir = (_end - _start).Normal();
+            {                
                 _end = _start + (dir * _maxLength);
             }
 
-            // check for dirt collision
-            // TODO need to make smaller steps in direction of hook to find collision sooner
-            var dirt = dirtAt((int)_end.X, (int)_end.Y);
-            if (dirt.HasValue && dirt.Value.IsActive)
-            {                
-                _isHooked = true;
+            //
+            // collision detection / hooked to something
+            //
+            for(var i = 0; i < length; i += 1)
+            {
+                // take small steps in the direction of the grappling hook
+                // checking for a collision at each step
+                var step = _start + (dir * i);
+                
+                // check for dirt collision
+                //      ??? what if dirt is dug out ???
+                var dirt = dirtAt((int)step.X, (int)step.Y);
+                if (dirt.HasValue && dirt.Value.IsActive)
+                {
+                    _isHooked = true;
+                    _end = step;
+                    break;
+                }
+
+                // check for worm collision
+                //      ??? what if worm moves ???
+                var otherAabb = new Rectangle(other.X - 3, other.Y - 3, 6, 6);                
+                if (otherAabb.Contains(step))
+                {                    
+                    _isHooked = true;
+                    _end = step;
+                    break;
+                }
             }
 
             // check for collision on world bounds and set the hook

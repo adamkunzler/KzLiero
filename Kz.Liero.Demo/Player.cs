@@ -54,6 +54,7 @@ namespace Kz.Liero
         private float _grapplingHookMaxLength = 100.0f;
         private float _grapplingHookGravity = 0.75f;
 
+        public event Action<float, float> OnPlayerMove;
 
         public Player(float x, float y, Color color, int id)
         {
@@ -94,7 +95,7 @@ namespace Kz.Liero
             //
             // update grappling gook
             //
-            _hook.Update(X, Y, worldWidth, worldHeight, dirtAt, other, viewPortDimension.Position);
+            _hook.Update(X, Y, worldWidth, worldHeight, dirtAt, other);
             var springForce = _hook.GetSpringForce(new Engine.DataStructures.Vector2f(X, Y));
 
             //
@@ -204,10 +205,15 @@ namespace Kz.Liero
             //
             if(_hook.IsHooked)
             {
-                _hook.SetStart(new Engine.DataStructures.Vector2f(X, Y));
+                _hook.SetStart(new Vector2f(X, Y));
             }
-        }
 
+            //
+            // publish event if anyone listening
+            //
+            OnPlayerMove?.Invoke(X, Y);
+        }
+        
         public void Render(Vector2 worldPosition)
         {
             var x = X - worldPosition.X;
@@ -260,7 +266,7 @@ namespace Kz.Liero
             }
         }
 
-        public Kz.Engine.DataStructures.Vector2f GetAimAngleVector(Vector2 worldPosition)
+        public Vector2f GetAimAngleVector(Vector2 worldPosition)
         {
             var x =  MathF.Cos(AimAngle);
             var y = MathF.Sin(AimAngle);

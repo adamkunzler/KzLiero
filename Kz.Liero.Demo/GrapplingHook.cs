@@ -6,10 +6,11 @@ using System.Numerics;
 namespace Kz.Liero
 {
     /*
-        TODO 
+        TODO
         [] bug where worm gets transported to edge
         [] grappling hook needs to expire if it doesn't attach to anything after n-seconds
     */
+
     public class GrapplingHook
     {
         private Vector2f _fireVelocity = new();
@@ -18,6 +19,7 @@ namespace Kz.Liero
         /// The "bob" of the spring (the part that is NOT anchored)
         /// </summary>
         private Vector2f _start = new();
+
         public Vector2f Start => _start;
 
         /// <summary>
@@ -37,13 +39,13 @@ namespace Kz.Liero
         /// </summary>
         private float _gravity = 0.75f;
 
-
         private float _maxLength = 900.0f;
 
         /// <summary>
         /// if true, the grappling hook has attached to something
         /// </summary>
         private bool _isHooked = false;
+
         public bool IsHooked => _isHooked;
 
         /// <summary>
@@ -57,6 +59,8 @@ namespace Kz.Liero
         /// <param name="start"></param>
         public void SetStart(Vector2f start) => _start = start;
 
+        private Player? _hookedPlayer = null;
+
         /// <summary>
         /// Initialize the grappling hook
         /// </summary>
@@ -68,18 +72,28 @@ namespace Kz.Liero
         }
 
         /// <summary>
-        /// Syncs the start of the grappling hook and updates the hooks 
+        /// Syncs the start of the grappling hook and updates the hooks
         /// position if the hook is active and not attached to anything
-        /// </summary>        
+        /// </summary>
         public void Update(
-            float startX, float startY, 
-            float worldWidth, float worldHeight, 
+            float startX, float startY,
+            float worldWidth, float worldHeight,
             Func<int, int, Dirt?> dirtAt,
-            Player other,
-            Vector2 worldPosition)
+            Player other)
         {
             _start.X = startX;
             _start.Y = startY;
+
+            // check if dirt has been dug out where hook is
+            if (_isHooked)
+            {
+                var hookedDirt = dirtAt((int)_end.X, (int)_end.Y);
+                if (hookedDirt.HasValue && !hookedDirt.Value.IsActive)
+                {
+                    _isHooked = false;
+                }
+            }
+
 
             // no need to update anything if the grappling hook is attached to something or not active
             if (!_isActive || _isHooked) return;
@@ -95,19 +109,19 @@ namespace Kz.Liero
             var dir = (_end - _start).Normal();
             var length = (_end - _start).Magnitude();
             if (length > _maxLength)
-            {                
+            {
                 _end = _start + (dir * _maxLength);
             }
 
             //
             // collision detection / hooked to something
             //
-            for(var i = 0; i < length; i += 1)
+            for (var i = 0; i < length; i += 1)
             {
                 // take small steps in the direction of the grappling hook
                 // checking for a collision at each step
                 var step = _start + (dir * i);
-                
+
                 // check for dirt collision
                 //      ??? what if dirt is dug out ???
                 var dirt = dirtAt((int)step.X, (int)step.Y);
@@ -115,16 +129,20 @@ namespace Kz.Liero
                 {
                     _isHooked = true;
                     _end = step;
+                    //Console.WriteLine("hooked to dirt");
                     break;
                 }
 
                 // check for worm collision
                 //      ??? what if worm moves ???
-                var otherAabb = new Rectangle(other.X - 3, other.Y - 3, 6, 6);                
+                var otherAabb = new Rectangle(other.X - 3, other.Y - 3, 6, 6);
                 if (otherAabb.Contains(step))
-                {                    
+                {
                     _isHooked = true;
                     _end = step;
+                    _hookedPlayer = other;
+                    _hookedPlayer.OnPlayerMove += OnGrappledMouseMoved;
+                    //Console.WriteLine("hooked to worm");
                     break;
                 }
             }
@@ -152,9 +170,15 @@ namespace Kz.Liero
             }
         }
 
+        private void OnGrappledMouseMoved(float x, float y)
+        {
+            _end.X = x;
+            _end.Y = y;
+        }
+
         /// <summary>
         /// Calculate the spring force of the grappling hook if it's hooked to something
-        /// </summary>        
+        /// </summary>
         public Vector2f GetSpringForce(Vector2f location)
         {
             if (!_isHooked) return Vector2f.Zero;
@@ -166,21 +190,21 @@ namespace Kz.Liero
 
         /// <summary>
         /// Renders the grappling hook if it's active
-        /// </summary>        
+        /// </summary>
         public void Render(Vector2 worldPosition, Color color)
         {
             if (!_isActive) return;
-            
+
             Raylib.DrawLine(
-                (int)(_start.X - worldPosition.X), (int)(_start.Y - worldPosition.Y), 
+                (int)(_start.X - worldPosition.X), (int)(_start.Y - worldPosition.Y),
                 (int)(_end.X - worldPosition.X), (int)(_end.Y - worldPosition.Y), color);
         }
-        
+
         /// <summary>
         /// Fire the grappling hook from a specified location and angle.
-        /// 
+        ///
         /// Initializes the properties of the grappling hook with fresh values
-        /// </summary>        
+        /// </summary>
         public void Fire(float x, float y, float theta)
         {
             _start = new Vector2f(x, y);
@@ -198,6 +222,13 @@ namespace Kz.Liero
         {
             _isActive = false;
             _isHooked = false;
+
+            // TODO handle on player death
+            if (_hookedPlayer != null)
+            {
+                _hookedPlayer.OnPlayerMove -= OnGrappledMouseMoved;
+                _hookedPlayer = null;
+            }
         }
     }
 }

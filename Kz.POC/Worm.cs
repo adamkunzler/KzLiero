@@ -126,49 +126,57 @@ namespace Kz.POC
             _sprite.Render((int)X, (int)Y, (int)Size, (int)Size, Direction == WormDir.Left, false);
 
             // crosshairs
-            var xx = X + MathF.Cos(AimAngle) * Size * 5.0f;
-            var yy = Y + MathF.Sin(AimAngle) * Size * 5.0f;
+            var middleX = X - (Size / 2.0f);
+            var middleY = Y - (Size / 2.0f);
+
+            var xx = middleX + MathF.Cos(AimAngle) * Size * 2.0f;
+            var yy = middleY + MathF.Sin(AimAngle) * Size * 2.0f;
             Raylib.DrawRectangleLines((int)xx, (int)yy, 10, 10, Color.Red);
 
-            // bounding box
-            var aabb = GetBoundingBox();            
-            Raylib.DrawRectangleLines(
-                (int)aabb.X, (int)aabb.Y,
-                (int)aabb.Width, (int)aabb.Height,
-                Color.Purple);
+            //Raylib.DrawCircle((int)middleX, (int)middleY, 5, Color.Red);
 
-            // smaller bounding box
-            var smallAABB = GetCollisionBoundingBox();            
-            Raylib.DrawRectangleLines(
-                (int)smallAABB.X, (int)smallAABB.Y, 
-                (int)smallAABB.Width, (int)smallAABB.Height,
-                Color.Purple);
-
-            // edge pixels
-            if (Direction == WormDir.Right)
+            if (false)
             {
-                for (var i = 0; i < _edgePixelsRight.Count; i++)
+                // bounding box
+                var aabb = GetBoundingBox();
+                Raylib.DrawRectangleLines(
+                    (int)aabb.X, (int)aabb.Y,
+                    (int)aabb.Width, (int)aabb.Height,
+                    Color.Purple);
+
+                // smaller bounding box
+                var smallAABB = GetCollisionBoundingBox();
+                Raylib.DrawRectangleLines(
+                    (int)smallAABB.X, (int)smallAABB.Y,
+                    (int)smallAABB.Width, (int)smallAABB.Height,
+                    Color.Purple);
+
+                // edge pixels
+                if (Direction == WormDir.Right)
                 {
-                    // 10 is half the width of the actual sprite image
-                    // 20 is the width of the actual sprite image
-                    //      center at origin           scale            offset
-                    var x = (_edgePixelsRight[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
-                    var y = (_edgePixelsRight[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
-                    //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
-                    Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+                    for (var i = 0; i < _edgePixelsRight.Count; i++)
+                    {
+                        // 10 is half the width of the actual sprite image
+                        // 20 is the width of the actual sprite image
+                        //      center at origin           scale            offset
+                        var x = (_edgePixelsRight[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
+                        var y = (_edgePixelsRight[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
+                        //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
+                        Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+                    }
                 }
-            }
-            else
-            {
-                for (var i = 0; i < _edgePixelsLeft.Count; i++)
+                else
                 {
-                    // 10 is half the width of the actual sprite image
-                    // 20 is the width of the actual sprite image
-                    //      center at origin           scale            offset
-                    var x = (_edgePixelsLeft[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
-                    var y = (_edgePixelsLeft[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
-                    //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
-                    Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+                    for (var i = 0; i < _edgePixelsLeft.Count; i++)
+                    {
+                        // 10 is half the width of the actual sprite image
+                        // 20 is the width of the actual sprite image
+                        //      center at origin           scale            offset
+                        var x = (_edgePixelsLeft[i].X - 10) * (Size / 20.0f) - (Size / 2.0f);
+                        var y = (_edgePixelsLeft[i].Y - 10) * (Size / 20.0f) - (Size / 2.0f);
+                        //Raylib.DrawPixel((int)(x), (int)(y), Color.Purple);
+                        Raylib.DrawPixel((int)(x + X), (int)(y + Y), Color.Purple);
+                    }
                 }
             }
         }

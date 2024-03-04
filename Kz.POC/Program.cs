@@ -69,7 +69,7 @@ internal class Program
             Raylib.ClearBackground(Color.Black);
 
             // draw some ground
-            Raylib.DrawRectangle(0, 537, 1024, (int)(512 - worm.Size), Color.DarkBrown);
+            Raylib.DrawRectangle(0, 512, 1024, 512, Color.DarkBrown);
 
             worm.Render();
 
